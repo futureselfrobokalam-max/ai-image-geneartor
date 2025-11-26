@@ -15,8 +15,13 @@ st.title("📸 AI Future Goal – Printable & Saved to MongoDB")
 # Inputs
 name = st.text_input("Student Name")
 school = st.text_input("School Name")
+
+phone = st.text_input("Phone Number (India)", placeholder="+91 XXXXX XXXXX")
+gender_input = st.selectbox("Gender", ["Male", "Female", "Other"])
+
 goal = st.selectbox("Future Goal",
                     ["Doctor", "IAS Officer", "Pilot", "Engineer", "Scientist", "Lawyer", "Army Officer"])
+
 logo = st.file_uploader("Upload School Logo (optional)", type=["png", "jpg", "jpeg"])
 
 st.subheader("📷 Capture Student Photo")
@@ -56,7 +61,8 @@ if captured_image and st.button("Generate AI Future Image"):
     ai_id = save_file_to_db(ai_bytes, f"{name}_ai.png", "image/png")
     card_id = save_file_to_db(card_bytes, f"{name}_card.png", "image/png")
 
-    save_history(name, school, goal, captured_id, ai_id, card_id)
+    # <-- UPDATED LINE
+    save_history(name, school, goal, phone, gender_input, captured_id, ai_id, card_id)
 
     st.success("📦 Saved to MongoDB Successfully!")
 
@@ -75,7 +81,6 @@ if captured_image and st.button("Generate AI Future Image"):
             printWindow.document.write('<html><head><title>Print</title>');
             printWindow.document.write('</head><body>');
             printWindow.document.write(content);
-            printWindow.document.write('</body></html>');
             printWindow.document.close();
             printWindow.print();
         }

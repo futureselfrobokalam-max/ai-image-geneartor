@@ -1,28 +1,43 @@
 # database_history.py
 import os
-from pymongo import MongoClient
 from datetime import datetime
+
+import streamlit as st
 from dotenv import load_dotenv
+from pymongo import MongoClient
 
 load_dotenv()
 
-client = MongoClient(os.getenv("MONGODB_URI"))
-db = client["futureGoalAI"]
-history = db["history"]
+
+def _get_mongo_uri():
+    """Read MONGODB_URI from Streamlit secrets, falling back to env / .env."""
+    try:
+        if "MONGODB_URI" in st.secrets:
+            return st.secrets["MONGODB_URI"]
+    except Exception:
+        pass  # no secrets.toml locally
+    return os.getenv("MONGODB_URI")
 
 
-def save_history(name, school, goal, phone, gender, captured_id, ai_id, card_id):
+@st.cache_resource
+def _get_history_collection():
+    """Connect once (lazily) and reuse the client across reruns."""
+    uri = _get_mongo_uri()
+    if not uri:
+        raise RuntimeError("MONGODB_URI is not set")
+    client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+    return client["futureGoalAI"]["history"]
+
+
+def save_history(name, school, goal, phone, gender):
     """
-    Save student metadata + file IDs to MongoDB.
+    Save student details to MongoDB (images are not stored).
     """
-    history.insert_one({
+    _get_history_collection().insert_one({
         "name": name,
         "school": school,
         "goal": goal,
         "phone": phone,
         "gender": gender,
-        "captured_image_id": captured_id,
-        "ai_image_id": ai_id,
-        "printable_card_id": card_id,
         "timestamp": datetime.now()
     })

@@ -5,7 +5,6 @@ import io
 
 from ai_processor import generate_profession_image
 from printable_card import generate_printable_card
-from storage_mongo import save_file_to_db
 from database_history import save_history
 
 
@@ -134,14 +133,14 @@ if generate_btn:
         card_bytes = card_buf.getvalue()
 
         # =========================================================
-        # 6️⃣   SAVE TO MONGO
+        # 6️⃣   SAVE STUDENT DETAILS TO MONGO (no images stored)
         # =========================================================
-        captured_id = save_file_to_db(stream.getvalue(), f"{name}_captured.png", "image/png")
-        ai_id = save_file_to_db(ai_bytes, f"{name}_ai.png", "image/png")
-        card_id = save_file_to_db(card_bytes, f"{name}_card.png", "image/png")
-
-        save_history(name, school, goal, phone, gender_input, captured_id, ai_id, card_id)
-        st.success("📦 Student record saved to MongoDB!")
+        try:
+            save_history(name, school, goal, phone, gender_input)
+            st.success("📦 Student record saved to MongoDB!")
+        except Exception as db_err:
+            # Don't block the card if the database is unreachable
+            st.warning(f"⚠️ Could not save student record: {db_err}")
 
 
         # =========================================================

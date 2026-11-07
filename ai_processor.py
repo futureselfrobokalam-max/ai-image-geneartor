@@ -3,18 +3,39 @@ import base64
 import io
 import os
 from PIL import Image
+import streamlit as st
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+def _get_setting(key, default=None):
+    """Read a setting from Streamlit secrets, falling back to env / .env."""
+    try:
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass  # no secrets.toml locally
+    return os.getenv(key, default)
+
+
+# Preview image models are only served on the v1beta API, not v1.
+# Override the model with a GEMINI_IMAGE_MODEL secret if needed
+# (e.g. "gemini-3.1-flash-image-preview").
+IMAGE_MODEL = _get_setting("GEMINI_IMAGE_MODEL", "gemini-3-pro-image-preview")
+
+client = genai.Client(
+    api_key=_get_setting("GEMINI_API_KEY"),
+    http_options=types.HttpOptions(api_version="v1beta"),
+)
 
 
 def generate_profession_image(image_stream, goal):
     """
-    Image → Image using Gemini 3 Pro Image Preview
-    with correct Part(text=...) and Part(inline_data=Blob)
+    Image → Image using a Gemini image model (IMAGE_MODEL)
+    with Part(text=...) and Part(inline_data=Blob)
     """
 
     # Load camera image
@@ -67,7 +88,7 @@ def generate_profession_image(image_stream, goal):
 
     # Stream model output
     for chunk in client.models.generate_content_stream(
-        model="gemini-3-pro-image-preview",
+        model=IMAGE_MODEL,
         contents=contents,
         config=config
     ):

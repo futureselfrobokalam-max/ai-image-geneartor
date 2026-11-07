@@ -4,7 +4,7 @@ from PIL import Image
 import io
 
 from ai_processor import generate_profession_image
-from printable_card import generate_printable_card
+from printable_card import generate_printable_card, card_to_pdf_bytes
 from database_history import save_history
 
 
@@ -131,6 +131,7 @@ if generate_btn:
         card_buf = io.BytesIO()
         printable.save(card_buf, format="PNG")
         card_bytes = card_buf.getvalue()
+        card_pdf = card_to_pdf_bytes(printable)
 
         # =========================================================
         # 6️⃣   SAVE STUDENT DETAILS TO MONGO (no images stored)
@@ -150,7 +151,7 @@ if generate_btn:
         st.image(printable, width=650)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        col_print, col_download, _ = st.columns([1, 1, 2])
+        col_print, col_download, col_pdf, _ = st.columns([1, 1, 1, 1])
 
         with col_print:
             print_js = """
@@ -182,6 +183,15 @@ if generate_btn:
                 card_bytes,
                 file_name=f"{name}_{goal}.png",
                 mime="image/png",
+                use_container_width=True
+            )
+
+        with col_pdf:
+            st.download_button(
+                "📄 Download PDF",
+                card_pdf,
+                file_name=f"{name}_{goal}.pdf",
+                mime="application/pdf",
                 use_container_width=True
             )
 
